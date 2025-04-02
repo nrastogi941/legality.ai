@@ -9,7 +9,7 @@ import fitz  # PyMuPDF for PDF parsing
 import os
 
 # Load API key from environment variables (replace manually if necessary)
-GENAI_API_KEY = "AIzaSyAmHJBTfJKblexZrqAkGNKyiJIosyu8R5w"
+GENAI_API_KEY = st.secrets["general"]["GENAI_API_KEY"]
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 

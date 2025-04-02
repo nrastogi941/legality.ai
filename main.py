@@ -7,7 +7,7 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 
 # Configure Google Gemini API (Replace with your actual API Key)
-GENAI_API_KEY = "AIzaSyAmHJBTfJKblexZrqAkGNKyiJIosyu8R5w"
+GENAI_API_KEY = st.secrets["general"]["GENAI_API_KEY"]
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
