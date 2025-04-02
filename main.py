@@ -7,7 +7,7 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 
 # Configure Google Gemini API (Replace with your actual API Key)
-GENAI_API_KEY = ""
+GENAI_API_KEY = "AIzaSyAmHJBTfJKblexZrqAkGNKyiJIosyu8R5w"
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
@@ -32,8 +32,17 @@ def extract_text_from_pdf(uploaded_file):
     return "\n".join([page.get_text("text") for page in doc])
 
 
-# Function to generate AI response
-def generate_response(prompt: str) -> str:
+def generate_response(query: str) -> str:
+    prompt = f"""You are an intelligent Legal advisor chatbot. Follow some below given guideline to give response
+         to user:
+         1. If User greets then greet user back and ask what legal advice should they except.
+         2. If user asks any legal question then explain the response to user just like a highly qualified 
+            legal advisor.
+         3. If the user asks any generic question which does not falls in legal category just response back 
+            back to user that asks only legal question and everything else is out of your scope.
+
+         User Query : {query}
+        """
     response = model.generate_content(prompt)
     return response.text if response else "Error generating response."
 
@@ -117,12 +126,15 @@ if menu == "📂 Upload & Analyze Documents":
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("📄 Summarize Documents"):
-                    st.write("**Summary:**", summarize_text(all_text))
+                    with st.spinner("🔎 Summarizing document..."):
+                        st.write("**Summary:**", summarize_text(all_text))
                 if st.button("✅ Detect Risky Clauses"):
-                    st.write("**Risks:**", detect_clause_risks(all_text))
+                    with st.spinner("🔍 Detecting risky clauses..."):
+                        st.write("**Risks:**", detect_clause_risks(all_text))
             with col2:
                 if st.button("🔎 Extract Named Entities"):
-                    st.write("**Entities:**", extract_named_entities(all_text))
+                    with st.spinner("🔍 Extracting named entities..."):
+                        st.write("**Entities:**", extract_named_entities(all_text))
 
         # Document Comparison
         if len(document_texts) >= 2:
@@ -149,9 +161,13 @@ elif menu == "💬 Legal Chatbot":
     user_input = st.chat_input("Ask me any legal question...")
     if user_input:
         st.session_state.chat_history.append({"role": "user", "content": user_input})
+        st.write("**Your Query:**", user_input)
         with st.chat_message("user"):
             st.markdown(user_input)
-        response = generate_response(user_input)
+        
+        with st.spinner("🔎 Searching..."):
+            response = generate_response(user_input)
+        
         st.session_state.chat_history.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
