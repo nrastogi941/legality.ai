@@ -7,9 +7,14 @@ from io import BytesIO
 from reportlab.pdfgen import canvas
 import fitz  # PyMuPDF for PDF parsing
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Load API key from environment variables (replace manually if necessary)
-GENAI_API_KEY = st.secrets["general"]["GENAI_API_KEY"]
+# GENAI_API_KEY = st.secrets["general"]["GENAI_API_KEY"]
+GENAI_API_KEY = os.getenv("GENAI_API_KEY")
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
@@ -134,3 +139,6 @@ async def generate_pdf(text: str):
                                  headers={"Content-Disposition": "attachment; filename=document.pdf"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
+# if __name__ == '__main__':
+#     app.run()
