@@ -10,3 +10,4 @@ en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_
 google-generativeai==0.8.4
 SpeechRecognition==3.14.2
 python-dotenv==1.0.1
+python-multipart==0.0.20
