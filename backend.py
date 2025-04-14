@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 import spacy
@@ -8,6 +9,7 @@ from reportlab.pdfgen import canvas
 import fitz  # PyMuPDF for PDF parsing
 import os
 from dotenv import load_dotenv
+from typing import Literal
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,6 +25,15 @@ nlp = spacy.load("en_core_web_sm")
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace "*" with specific origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class QueryRequest(BaseModel):
@@ -88,28 +99,35 @@ async def extract_entities(request: DocumentRequest):
     return {ent.text: ent.label_ for ent in doc.ents}
 
 @app.post("/upload_document/")
-async def upload_document(file: UploadFile = File(...)):
-    """Uploads a legal document and extracts text."""
+async def upload_document(
+    file: UploadFile = File(...),
+    action_type: Literal["summarize", "detect_risk", "extract_entities"] = Form(...)
+):
+    """Uploads a legal document and performs an action."""
     try:
-        # Ensure the file is valid
-        print(f"File name: {file.filename}, Content type: {file.content_type}")
         if not file.content_type:
             raise HTTPException(status_code=400, detail="Invalid file type or no file uploaded.")
-        
-        # Read the file content
+
         content = await file.read()
-        print(f"File name: {file.filename}, Content type: {file.content_type}")
-        
-        # Handle PDF files
+
         if file.content_type == 'application/pdf':
-            text = extract_text_from_pdf(content)
-        # Handle plain text files
+            text = extract_text_from_pdf(content)  # Assumes byte stream input
         elif file.content_type == 'text/plain':
             text = content.decode("utf-8", errors="ignore")
         else:
             raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a PDF or TXT file.")
-        
-        return {"text": text}
+
+        if action_type == "summarize":
+            print("text", text)
+            summary = generate_response(f"Summarize this legal document:\n{text}")
+            return {"summary": summary}
+        elif action_type == "detect_risk":
+            risks = generate_response(f"Highlight any high-risk clauses in this document:\n{text}")
+            return {"risks": risks}
+        elif action_type == "extract_entities":
+            doc = nlp(text)
+            return {"entities": {ent.text: ent.label_ for ent in doc.ents}}
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
 
